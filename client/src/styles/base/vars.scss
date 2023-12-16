@@ -1,0 +1,12 @@
+:root {
+  --white-color: #fff;
+  --black-color: #000;
+  --font-name: "Lato";
+  --font-size: 14px;
+  --font-weight: 400;
+  --font-style: normal;
+  --line-height: 19px;
+  --container-inner-width: 1340px;
+  --container-padding: 20px;
+  --container-total-width: calc(var(--container-inner-width) + (var(--container-padding) * 2));
+}
