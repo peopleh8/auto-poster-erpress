@@ -66,7 +66,7 @@ const App: FC = () => {
   const postToFB = async () => {
     try {
       postingArticleToFB(true)
-      await FBAxios.post(`/feed?message=${article}`)
+      await FBAxios.post(`/photos?message=${encodeURIComponent(article)}&url=https://img.freepik.com/free-photo/a-cupcake-with-a-strawberry-on-top-and-a-strawberry-on-the-top_1340-35087.jpg`)
 
       setModalTitleText('Article has been posted!')
       toggleModalOpen(true)
@@ -87,8 +87,8 @@ const App: FC = () => {
       fetchingArticle(true)
       
       const chatCompletion = await openai.chat.completions.create({ 
-        messages: [{ role: 'user', content: `${subject} - Generate an article on one of these topics.` }], 
-        model: 'gpt-3.5-turbo',
+        messages: [{ role: 'user', content: `${subject} - Generate an article on one of these topics with emojis and with a link to photo on the Internet in jpg format, it should correspond to the content of the article. The link to the photo should be at the end and should not be 404` }], 
+        model: 'gpt-4-1106-preview',
         temperature: 0.9,
       })
   
