@@ -89,7 +89,7 @@ const App: FC = () => {
       const chatCompletion = await openai.chat.completions.create({ 
         messages: [{ role: 'user', content: `${subject} - Generate an article on one of these topics with emojis and with a link to photo on the Internet in jpg format, it should correspond to the content of the article. The link to the photo should be at the end and should not be 404` }], 
         model: 'gpt-4-1106-preview',
-        temperature: 0.9,
+        temperature: 0.1,
       })
   
       if (chatCompletion?.choices[0]?.message?.content) {
