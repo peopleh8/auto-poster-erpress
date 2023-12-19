@@ -9,28 +9,39 @@ import Modal from './components/UI/Modal/Modal'
 import Loader from './components/UI/Loader/Loader'
 import { ButtonType, FieldTypes, LoaderSizes, LoaderStyles } from './types/common.types'
 import { useCopyToClipboard } from './hooks/use-copy'
-import { FBAxios, commonAxios } from './config/axios'
+import { FBAxios, commonAxios, unsplashAxios } from './config/axios'
 import { openai } from './config/openai'
 import { delay } from './utils/delay'
 import copyIcon from './assets/icons/copy.svg'
 import saveIcon from './assets/icons/save.svg'
 import 'normalize.css'
 import './styles/pages/App.scss'
+import PosterUpload from './components/PosterUpload'
+import PosterPhoto from './components/PosterPhoto'
 
 
 const App: FC = () => {
   const [ isGlobalFetching, setGlobalFetching ] = useState<boolean>(true)
   const [ isSubjectSaving, setSubjectSaving ] = useState<boolean>(false)
   const [ isArticleFetching, setArticleFetching ] = useState<boolean>(false)
+
+  const [ isPhotoGenerating, setPhotoGenerating ] = useState<boolean>(false)
+
   const [ isArticlePostingToFB, setArticlePostingToFB ] = useState<boolean>(false)
   const [ isModalOpen, setModalOpen ] = useState<boolean>(false)
   const [ modalTitleText, setModalTitleText ] = useState<string>('')
   const [ subject, setSubject ] = useState<string>('Why it\'s important to have a good Realtor, Real estate news in florida, National real estate news (USA), Real estate news for the emerald coast, Real estate news for Panama City Beach, Real estate news for 30A Florida, Real estate news for Panama City')
+  const [ imageSubject, setImageSubject ] = useState<string>('Real estate')
   const [ article, setArticle ] = useState<string>('')
+  const [ photo, setPhoto ] = useState<string>('')
   const [ value, copy ] = useCopyToClipboard()
 
   const changeSubjectHandler = (e: ChangeEvent<HTMLInputElement>) => {
     setSubject(e.target.value)
+  }
+
+  const changeImageSubjectHandler = (e: ChangeEvent<HTMLInputElement>) => {
+    setImageSubject(e.target.value)
   }
 
   const changeArticleHandler = (e: ChangeEvent<HTMLTextAreaElement>) => {
@@ -66,7 +77,7 @@ const App: FC = () => {
   const postToFB = async () => {
     try {
       postingArticleToFB(true)
-      await FBAxios.post(`/photos?message=${encodeURIComponent(article)}&url=https://img.freepik.com/free-photo/a-cupcake-with-a-strawberry-on-top-and-a-strawberry-on-the-top_1340-35087.jpg`)
+      await FBAxios.post(`/photos?message=${encodeURIComponent(article)}&url=${photo}`)
 
       setModalTitleText('Article has been posted!')
       toggleModalOpen(true)
@@ -80,6 +91,25 @@ const App: FC = () => {
     }
   }
 
+  const generatePhoto = async () => {
+    try {
+      setPhotoGenerating(true)
+      
+      const { data } = await unsplashAxios.get(`/photos/random/?query=${imageSubject}`)
+
+      setPhoto(data.urls.full)
+      setModalTitleText('Image has been generated!')
+      setModalOpen(true)
+    } catch (e: unknown) {
+      console.error((e as Error).message)
+
+      setModalTitleText('Something went wrong, please try again!')
+      setModalOpen(true)
+    } finally {
+      setPhotoGenerating(false)
+    }
+  }
+
   const submitHandler = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
@@ -87,13 +117,16 @@ const App: FC = () => {
       fetchingArticle(true)
       
       const chatCompletion = await openai.chat.completions.create({ 
-        messages: [{ role: 'user', content: `${subject} - Generate an article on one of these topics with emojis and with a link to photo on the Internet in jpg format, it should correspond to the content of the article. The link to the photo should be at the end and should not be 404` }], 
+        messages: [{ role: 'user', content: `${subject} - Generate an article on one of these topics with emojis.` }], 
         model: 'gpt-4-1106-preview',
         temperature: 0.1,
       })
+
+      const { data } = await unsplashAxios.get(`/photos/random/?query=${imageSubject}`)
   
       if (chatCompletion?.choices[0]?.message?.content) {
         rewriteArticleHandler(chatCompletion.choices[0].message.content)
+        setPhoto(data.urls.full)
       }
     } catch (e: unknown) {
       console.error((e as Error).message)
@@ -106,15 +139,13 @@ const App: FC = () => {
   }
 
   const saveSubjectHandler = async () => {
-    console.log('save')
     try {
       setSubjectSaving(true)
+      
+      await commonAxios.post('/setChatCompletionSubject', { subject, imageSubject })
+
       setModalTitleText('Subject has been saved!')
       setModalOpen(true)
-      
-      const res = await commonAxios.post('/setChatCompletionSubject', { subject })
-
-      console.log(res)
     } catch (e: unknown) {
       console.log((e as Error).message)
 
@@ -133,7 +164,9 @@ const App: FC = () => {
         const { data } = await commonAxios.get('/getChatCompletionResult')
 
         setArticle(data.article || '')
+        setPhoto(data.photo || '')
         setSubject(data.subject || '')
+        setImageSubject(data.imageSubject)
       } catch (e: unknown) {
         console.error((e as Error).message)
       } finally {
@@ -163,9 +196,18 @@ const App: FC = () => {
               <Field 
                 classes='poster-form__field'
                 fieldType={FieldTypes.Input}
-                name='subject' 
+                name='image-subject' 
                 type='text' 
-                placeholder='Subject'
+                placeholder='Image Subject'
+                value={imageSubject}
+                onChange={changeImageSubjectHandler}
+              />
+              <Field 
+                classes='poster-form__field'
+                fieldType={FieldTypes.Input}
+                name='article-subject' 
+                type='text' 
+                placeholder='Article Subject'
                 value={subject}
                 onChange={changeSubjectHandler}
               />
@@ -175,7 +217,7 @@ const App: FC = () => {
                 icon={saveIcon}
                 isFetching={isSubjectSaving}
                 type={ButtonType.Button}
-                disabled={subject.length < 5}
+                disabled={subject.length < 5 || imageSubject.length < 5 || isArticleFetching || isArticlePostingToFB || isPhotoGenerating}
                 onClick={saveSubjectHandler}
               />
             </PosterToolbar>
@@ -185,31 +227,36 @@ const App: FC = () => {
                 text='Generate Article'
                 isFetching={isArticleFetching}
                 type={ButtonType.Submit}
-                disabled={subject.length < 5}
+                disabled={subject.length < 5 || isSubjectSaving || isArticlePostingToFB || isPhotoGenerating}
               />
               <Button 
                 classes='poster-form__btn'
                 text='Post to Facebook'
                 isFetching={isArticlePostingToFB}
                 type={ButtonType.Button}
-                disabled={article.length < 5}
+                disabled={article.length < 5 || !photo || isSubjectSaving || isArticleFetching || isPhotoGenerating}
                 onClick={postToFB}
               />
-              {/* <Button 
-                classes='poster-form__btn'
-                text='Post to Linked In'
-                type={ButtonType.Button}
-                disabled
-              /> */}
               <Button 
                 classes='poster-form__btn'
                 text='Copy'
                 icon={copyIcon}
                 type={ButtonType.Button}
-                disabled={article.length < 10}
+                disabled={article.length < 10 || isSubjectSaving || isArticleFetching || isArticlePostingToFB || isPhotoGenerating}
                 onClick={copyHandler}
               />
             </PosterButtons>
+            <PosterUpload>
+              <PosterPhoto photo={photo} />
+              <Button 
+                classes='poster-form__btn'
+                text={!photo ? 'Generate Image' : 'Regenerate Image'}
+                isFetching={isPhotoGenerating}
+                type={ButtonType.Button}
+                disabled={isSubjectSaving || isArticleFetching || isArticlePostingToFB}
+                onClick={generatePhoto}
+              />
+            </PosterUpload>
             <Field
               classes='poster-form__field'
               fieldType={FieldTypes.Textarea}

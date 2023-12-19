@@ -1,5 +1,5 @@
 .poster {
-  padding: 50px;
+  padding: 20px;
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -20,13 +20,55 @@
       flex: 1;
     }
     & > *:nth-child(2) {
+      flex: 1;
+    }
+    & > *:nth-child(3) {
       width: 170px;
+    }
+  }
+  &__upload {
+    margin-bottom: 30px;
+    display: flex;
+    align-items: flex-end;
+    gap: 20px;
+    & > *:nth-child(2) {
+      width: 200px;
+    }
+  }
+  &__photo {
+    border-radius: 7px;
+    width: 250px;
+    height: 250px;
+    overflow: hidden;
+    & > img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    &-inner {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      text-align: center;
+      border-radius: 7px;
+      border: 1px dashed silver;
+    }
+    &-icon {
+      width: 80px;
+      height: 80px;
+      img {
+        width: 100%;
+        height: 100%;
+      }
     }
   }
   &__btns {
     display: flex;
     gap: 20px;
-    margin: 50px 0;
+    margin: 30px 0;
     & > *:nth-child(1) {
       flex: 1;
     }
@@ -47,22 +89,37 @@
 
 @media (max-width: 768px) {
   .poster {
-    padding: 20px;
     &__title {
       margin-bottom: 10px;
     }
   }
   .poster-form {
     &__toolbar {
-      & > *:nth-child(2) {
-        width: 100px;
+      gap: 10px;
+      flex-wrap: wrap;
+      & > *:nth-child(3) {
+        width: 100%;
       }
     }
     &__btns {
-      margin: 20px 0;
+      margin: 10px 0;
+      gap: 10px;
       flex-direction: column;
       & > *:nth-child(3) {
         width: 100%;
+      }
+    }
+    &__photo {
+      width: 200px;
+      height: 200px;
+    }
+    &__upload {
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 20px;
+      & > *:nth-child(2) {
+        width: 100%;
+        order: -1;
       }
     }
   }
