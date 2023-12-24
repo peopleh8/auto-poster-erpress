@@ -12,6 +12,7 @@ const port = 3000;
 let lastChatCompletionResult = null;
 let generatedPhoto = null;
 let articleSubject = 'Why it\'s important to have a good Realtor, Real estate news in florida, National real estate news (USA), Real estate news for the emerald coast, Real estate news for Panama City Beach, Real estate news for 30A Florida, Real estate news for Panama City';
+let exampleArticle = '';
 let photoSubject = 'Real estate'
 
 const openai = new OpenAI({
@@ -31,10 +32,14 @@ const sendEmail = async (subject) => {
     }
   });
 
+  const articleForSend = exampleArticle.trim() !== ''
+    ? `${subject} - Generate an article on one of these topics with emojis. Here is an example article: ${exampleArticle}`
+    : `${subject} - Generate an article on one of these topics with emojis.`
+
   const chatCompletion = await openai.chat.completions.create({ 
-    messages: [{ role: 'user', content: `${subject} - Generate an article on one of these topics with emojis.` || "Say this is a test" }], 
-    model: 'gpt-3.5-turbo',
-    temperature: 0.9,
+    messages: [{ role: 'user', content: articleForSend || 'Say this is a test' }], 
+    model: 'gpt-4-1106-preview',
+    temperature: 0.1,
   });
 
   const { data } = await axios.get(`${process.env.UNSPLASH_BASE_URL}/photos/random/?client_id=${process.env.UNSPLASH_CLIENT_ID}&query=${photoSubject}`)
@@ -58,16 +63,18 @@ app.get('/getChatCompletionResult', (req, res) => {
     article: lastChatCompletionResult, 
     subject: articleSubject,
     imageSubject: photoSubject,
-    photo: generatedPhoto
+    photo: generatedPhoto,
+    exArticle: exampleArticle
   });
 });
 
 app.post('/setChatCompletionSubject', (req, res) => {
-  const { subject, imageSubject } = req.body;
+  const { subject, imageSubject, exampleArticle: exArticle } = req.body;
   articleSubject = subject;
   photoSubject = imageSubject
+  exampleArticle = exArticle
 
-  res.json({ result: { articleSubject, photoSubject} });
+  res.json({ result: { articleSubject, photoSubject, exArticle} });
 });
 
 const job = schedule.scheduleJob('0 * * * *', () => {
