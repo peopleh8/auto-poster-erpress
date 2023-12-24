@@ -14,11 +14,12 @@ import { openai } from './config/openai'
 import { delay } from './utils/delay'
 import copyIcon from './assets/icons/copy.svg'
 import saveIcon from './assets/icons/save.svg'
-import 'normalize.css'
-import './styles/pages/App.scss'
 import PosterUpload from './components/PosterUpload'
 import PosterPhoto from './components/PosterPhoto'
-
+import DropboxChooser from './components/DropboxChooser'
+import PosterUploadBtns from './components/PosterUploadBtns'
+import 'normalize.css'
+import './styles/pages/App.scss'
 
 const App: FC = () => {
   const [ isGlobalFetching, setGlobalFetching ] = useState<boolean>(true)
@@ -33,6 +34,7 @@ const App: FC = () => {
   const [ subject, setSubject ] = useState<string>('Why it\'s important to have a good Realtor, Real estate news in florida, National real estate news (USA), Real estate news for the emerald coast, Real estate news for Panama City Beach, Real estate news for 30A Florida, Real estate news for Panama City')
   const [ imageSubject, setImageSubject ] = useState<string>('Real estate')
   const [ article, setArticle ] = useState<string>('')
+  const [ exampleArticle, setExampleArticle ] = useState<string>('')
   const [ photo, setPhoto ] = useState<string>('')
   const [ value, copy ] = useCopyToClipboard()
 
@@ -46,6 +48,10 @@ const App: FC = () => {
 
   const changeArticleHandler = (e: ChangeEvent<HTMLTextAreaElement>) => {
     setArticle(e.target.value)
+  }
+
+  const changeExampleArticleHandler = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    setExampleArticle(e.target.value)
   }
 
   const rewriteArticleHandler = (article: string) => {
@@ -115,9 +121,13 @@ const App: FC = () => {
 
     try {
       fetchingArticle(true)
+
+      const articleForSend = exampleArticle.trim() !== ''
+        ? `${subject} - Generate an article on one of these topics with emojis. Here is an example article: ${exampleArticle}`
+        : `${subject} - Generate an article on one of these topics with emojis.`
       
       const chatCompletion = await openai.chat.completions.create({ 
-        messages: [{ role: 'user', content: `${subject} - Generate an article on one of these topics with emojis.` }], 
+        messages: [{ role: 'user', content: articleForSend }], 
         model: 'gpt-4-1106-preview',
         temperature: 0.1,
       })
@@ -142,7 +152,7 @@ const App: FC = () => {
     try {
       setSubjectSaving(true)
       
-      await commonAxios.post('/setChatCompletionSubject', { subject, imageSubject })
+      await commonAxios.post('/setChatCompletionSubject', { subject, imageSubject, exampleArticle })
 
       setModalTitleText('Subject has been saved!')
       setModalOpen(true)
@@ -167,6 +177,7 @@ const App: FC = () => {
         setPhoto(data.photo || '')
         setSubject(data.subject || '')
         setImageSubject(data.imageSubject)
+        setExampleArticle(data.exArticle || '')
       } catch (e: unknown) {
         console.error((e as Error).message)
       } finally {
@@ -176,6 +187,11 @@ const App: FC = () => {
 
     getArticle()
   }, [])
+
+  const dropDownSuccess = (files: any) => {
+    const { link } = files[0]
+    setPhoto(link)
+  }
   
   return (
     <div className='poster'>
@@ -242,19 +258,33 @@ const App: FC = () => {
                 text='Copy'
                 icon={copyIcon}
                 type={ButtonType.Button}
-                disabled={article.length < 10 || isSubjectSaving || isArticleFetching || isArticlePostingToFB || isPhotoGenerating}
+                disabled={article.length < 5 || isSubjectSaving || isArticleFetching || isArticlePostingToFB || isPhotoGenerating}
                 onClick={copyHandler}
               />
             </PosterButtons>
             <PosterUpload>
               <PosterPhoto photo={photo} />
-              <Button 
-                classes='poster-form__btn'
-                text={!photo ? 'Generate Image' : 'Regenerate Image'}
-                isFetching={isPhotoGenerating}
-                type={ButtonType.Button}
-                disabled={isSubjectSaving || isArticleFetching || isArticlePostingToFB}
-                onClick={generatePhoto}
+              <PosterUploadBtns>
+                <Button 
+                  classes='poster-form__btn'
+                  text={!photo ? 'Generate Random Image' : 'Regenerate Image'}
+                  isFetching={isPhotoGenerating}
+                  type={ButtonType.Button}
+                  disabled={isSubjectSaving || isArticleFetching || isArticlePostingToFB}
+                  onClick={generatePhoto}
+                />
+                <DropboxChooser 
+                  onSuccess={dropDownSuccess}
+                  disabled={isSubjectSaving || isArticleFetching || isArticlePostingToFB || isPhotoGenerating}
+                />
+              </PosterUploadBtns>
+              <Field
+                classes='poster-form__field'
+                fieldType={FieldTypes.Textarea}
+                name='article-example' 
+                placeholder='Example Article'
+                value={exampleArticle}
+                onChange={changeExampleArticleHandler}
               />
             </PosterUpload>
             <Field
