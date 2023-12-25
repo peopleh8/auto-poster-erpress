@@ -53,3 +53,7 @@ export interface FieldProps {
 export interface ButtonProps {
   [key: string]: any
 }
+
+export interface LinkProps {
+  [key: string]: any
+}
