@@ -27,8 +27,8 @@ const sendEmail = async (subject) => {
     host: 'smtp.gmail.com',
     port: 587,
     auth: {
-      user: 'hdylansmith@gmail.com',
-      pass: 'elmvzmqicexgtcxg'
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASSWORD
     }
   });
 
@@ -46,7 +46,7 @@ const sendEmail = async (subject) => {
 
   const info = await transporter.sendMail({
     from: '"Fred Foo 👻" <foo@example.com>',
-    to: 'andriy14881999@gmail.com',
+    to: process.env.SMTP_USER,
     subject: "Generated Article",
     text: chatCompletion.choices[0].message.content,
   });
