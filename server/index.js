@@ -27,8 +27,8 @@ const sendEmail = async (subject) => {
     host: 'smtp.gmail.com',
     port: 587,
     auth: {
-      user: 'andriy14881999@gmail.com',
-      pass: 'iloekazbyenjfiur'
+      user: 'hdylansmith@gmail.com',
+      pass: 'elmvzmqicexgtcxg'
     }
   });
 
@@ -77,7 +77,7 @@ app.post('/setChatCompletionSubject', (req, res) => {
   res.json({ result: { articleSubject, photoSubject, exArticle} });
 });
 
-const job = schedule.scheduleJob('0 * * * *', () => {
+const job = schedule.scheduleJob('0 */72 * * *', () => {
   sendEmail();
 });
 
